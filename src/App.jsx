@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import "./App.css";
+import TodoForm from "./TodoForm";
+import TodoItem from "./TodoItem";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [todos, setTodos] = useState([]);
+  const addTask = (userInput) => {
+    if (userInput) {
+      const newTask = {
+        id: Date.now(),
+        task: userInput,
+        completed: false,
+      };
+      setTodos([...todos, newTask]);
+    }
+  };
+  const removeTask = (id) => {
+    setTodos([...todos.filter((todo) => todo.id !== id)]);
+  };
 
+  const toggleTask = (id) => {
+    setTodos([
+      ...todos.map((todo) =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : { ...todo }
+      ),
+    ]);
+  };
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="todo-app">
+      <h1>Todo List</h1>
+      <TodoForm addTask={addTask} />
+      <hr className="separator" />
+      {todos.map((todo) => (
+        <TodoItem
+          todo={todo}
+          key={todo.id}
+          removeTask={removeTask}
+          toggleTask={toggleTask}
+        />
+      ))}
+    </div>
+  );
 }
 
-export default App
+export default App;
