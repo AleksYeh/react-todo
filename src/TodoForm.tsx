@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 
 function TodoForm({ addTask }) {
-  const [userInput, setUserInput] = useState("");
-  const handleChange = (event) => {
+  const [userInput, setUserInput] = useState<string>("");
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUserInput(event.target.value);
   };
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     addTask(userInput);
     setUserInput("");
