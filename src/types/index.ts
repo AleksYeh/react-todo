@@ -5,7 +5,7 @@ export default interface Task {
 }
 
 export interface ApiTask {
-  userId: number;
+  userId?: number;
   id: number;
   title: string;
   completed: boolean;

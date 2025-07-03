@@ -3,7 +3,7 @@ import "./App.css";
 import TodoForm from "./TodoForm";
 import TodoItem from "./TodoItem";
 import TodoService from "./API/TodoService";
-import Task from "./types";
+import Task, { ApiTask } from "./types";
 
 function App() {
   const [todos, setTodos] = useState<Task[]>([]);
@@ -36,8 +36,13 @@ function App() {
   }, []);
 
   async function fetchTodos() {
-    const todos = await TodoService.getAll();
-    setTodos(todos);
+    const todos: ApiTask[] = await TodoService.getAll();
+    const todoData: Task[] = todos.map((dataTodo: ApiTask) => ({
+      id: dataTodo.id,
+      title: dataTodo.title,
+      completed: dataTodo.completed,
+    }));
+    setTodos(todoData);
   }
   return (
     <div className="todo-app">
