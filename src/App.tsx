@@ -1,69 +1,81 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import TodoForm from "./TodoForm";
 import TodoItem from "./TodoItem";
-import TodoService from "./API/TodoService";
 import Task, { ApiTask, TodoActionTypes } from "./types";
 import { useTypedSelector } from "./hooks/useTypedSelector";
-import { fetchTodos } from "./store/action-creators/todos";
 import { useDispatch } from "react-redux";
 import { useActions } from "./hooks/useActions";
-
-
-
+import { ThunkDispatch } from "redux-thunk";
 
 function App() {
-  const todosFromRedux = useTypedSelector(state => state.todo.todos);
-  const {loading, error, page, limit} = useTypedSelector(state=> state.todo)
-  const [todos, setTodos] = useState(todosFromRedux);
-  const dispatch = useDispatch();
-  const {fetchTodos, setTodoPage} = useActions()
+  // Не нужно высерать кучу селекторов, достаточно одного
+  const { loading, error, page, limit, todos } = useTypedSelector(
+    (state) => state.todo
+  );
+
+  // По хорошему не нужно дублировать стейт, достаточно использовать селектор
+  const [newTodos, setNewTodos] = useState(todos);
+
+  // Лучше вынести в хуки
+  const dispatch: ThunkDispatch<{}, {}, any> = useDispatch();
+  const { fetchTodos, setTodoPage } = useActions();
   const pages = [1, 2, 3, 4, 5];
 
+  // Нужно сделать синхронизацию с бэком, и удалить этот useEffect
+  useEffect(() => {
+    setNewTodos(todos);
+  }, [todos]);
+
+  // В целом ок, типы явно не обязательно указывать, в TS контекстная типизация, он сам типы подхватит
   const addTask = (userInput: string): void => {
     if (userInput) {
-      const newTask: Task = {
+      const newTask = {
         id: todos.length ? todos[todos.length - 1].id + 1 : 1,
         title: userInput,
         completed: false,
       };
-      setTodos([newTask, ...todos]);
+      setNewTodos([newTask, ...newTodos]);
     }
   };
 
+  // Сделать синхронизацию с бэком
   const removeTask = (id: number): void => {
-    setTodos([...todos.filter((todo) => todo.id !== id)]);
+    setNewTodos([...newTodos.filter((todo) => todo.id !== id)]);
   };
 
+  // Сделать синхронизацию с бэком
   const toggleTask = (id: number): void => {
-    setTodos([
-      ...todos.map((todo) =>
+    setNewTodos([
+      ...newTodos.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : { ...todo }
       ),
     ]);
   };
 
-  useEffect(() => {
-    normalizeTodos();
-  }, [page]);
-
+  // Вынести в action-creators
   async function normalizeTodos() {
-    const todos: ApiTask[] = await fetchTodos(page, limit);
+    const todos: ApiTask[] = await dispatch(fetchTodos(page, limit));
+
     const todoData: Task[] = todos.map((dataTodo: ApiTask) => ({
       id: dataTodo.id,
       title: dataTodo.title,
       completed: dataTodo.completed,
     }));
-    dispatch({type: TodoActionTypes.FETCH_TODOS_SUCCESS, payload: todoData})
-    setTodos(todoData);
+    dispatch({ type: TodoActionTypes.FETCH_TODOS_SUCCESS, payload: todoData });
+    setNewTodos(todoData);
   }
 
-  if(loading) {
-    return <h1>Идёт загрузка...</h1>
+  useEffect(() => {
+    normalizeTodos();
+  }, [page]);
+
+  if (loading) {
+    return <h1>Идёт загрузка...</h1>;
   }
 
-  if(error) {
-    return <h1>{error}</h1>
+  if (error) {
+    return <h1>{error}</h1>;
   }
 
   return (
@@ -72,7 +84,7 @@ function App() {
 
       <TodoForm addTask={addTask} />
       <hr className="separator" />
-      {todos.map((todo) => (
+      {newTodos.map((todo) => (
         <TodoItem
           todo={todo}
           key={todo.id}
@@ -80,15 +92,19 @@ function App() {
           toggleTask={toggleTask}
         />
       ))}
-      <div style={{display: "flex"}}>
-        {pages.map(p=> <div
-        onClick={() => setTodoPage(p)}
-        style={{border:p === page ? "2px solid green" : "1px solid gray", padding: 10}}
-      >
-        {p}
-      </div> )}
+      <div style={{ display: "flex" }}>
+        {pages.map((p) => (
+          <div
+            onClick={() => setTodoPage(p)}
+            style={{
+              border: p === page ? "2px solid green" : "1px solid gray",
+              padding: 10,
+            }}
+          >
+            {p}
+          </div>
+        ))}
       </div>
-      
     </div>
   );
 }
