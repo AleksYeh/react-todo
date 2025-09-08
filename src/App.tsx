@@ -13,60 +13,69 @@ const reducer = (state, action) => {};
 const store = createStore();
 
 function App() {
-  const [todos, setTodos] = useState<Task[]>([]);
+  const {loading, error, page, todos} = useTypedSelector((state) => state.todo)
+  const pages = [1, 2, 3, 4, 5]
 
-  const addTask = (userInput: string): void => {
-    if (userInput) {
-      const newTask: Task = {
-        id: todos.length ? todos[todos.length - 1].id + 1 : 1,
-        title: userInput,
-        completed: false,
-      };
-      setTodos([newTask, ...todos]);
+  // Лучше вынести в хуки
+  const dispatch: ThunkDispatch<{}, {}, any> = useDispatch()
+  const {fetchNormalizedTodos, setTodoPage} = useActions()
+
+  const handleSubmit = (userInput: string) => {
+    if (userInput.trim()) {
+      dispatch(addTask(userInput))
+      return todos
     }
-  };
+  }
 
-  const removeTask = (id: number): void => {
-    setTodos([...todos.filter((todo) => todo.id !== id)]);
-  };
+  const handleRemove = (id: number) => {
+    dispatch(removeTask(id))
+  }
 
-  const toggleTask = (id: number): void => {
-    setTodos([
-      ...todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : { ...todo }
-      ),
-    ]);
-  };
+  const toggleTask = (id: number) => {
+    dispatch(updateToggleTask(id))
+  }
 
   useEffect(() => {
-    fetchTodos();
-  }, []);
+    fetchNormalizedTodos()
+  }, [page])
 
-  async function fetchTodos() {
-    const todos: ApiTask[] = await TodoService.getAll();
-    const todoData: Task[] = todos.map((dataTodo: ApiTask) => ({
-      id: dataTodo.id,
-      title: dataTodo.title,
-      completed: dataTodo.completed,
-    }));
-    setTodos(todoData);
+  if (loading) {
+    return <h1>Идёт загрузка...</h1>
   }
+
+  if (error) {
+    return <h1>{error}</h1>
+  }
+
   return (
     <div className="todo-app">
       <h1>Todo List</h1>
 
-      <TodoForm addTask={addTask} />
+      <TodoForm addTask={handleSubmit} />
       <hr className="separator" />
       {todos.map((todo) => (
         <TodoItem
           todo={todo}
           key={todo.id}
-          removeTask={removeTask}
+          removeTask={handleRemove}
           toggleTask={toggleTask}
         />
       ))}
+      <div style={{display: 'flex'}}>
+        {pages.map((p) => (
+          <div
+            onClick={() => setTodoPage(p)}
+            style={{
+              border: p === page ? '2px solid green' : '1px solid gray',
+              padding: 10,
+            }}
+          >
+            {p}
+          </div>
+        ))}
+      </div>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
