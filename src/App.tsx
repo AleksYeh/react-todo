@@ -4,6 +4,13 @@ import TodoForm from "./TodoForm";
 import TodoItem from "./TodoItem";
 import TodoService from "./API/TodoService";
 import Task, { ApiTask } from "./types";
+import { createStore } from "redux";
+
+action = { type: "", payload: "?" };
+
+const reducer = (state, action) => {};
+
+const store = createStore();
 
 function App() {
   const [todos, setTodos] = useState<Task[]>([]);
